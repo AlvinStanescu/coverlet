@@ -31,6 +31,8 @@ namespace Coverlet.Core.Instrumentation
             // the module.
         }
 
+        public static int[] GetHitsRecord() => Interlocked.Exchange(ref HitsArray, new int[HitsArray.Length]);
+
         // A call to this method will be injected in the static constructor above for most cases. However, if the
         // current assembly is System.Private.CoreLib (or more specifically, defines System.AppDomain), a call directly
         // to UnloadModule will be injected in System.AppContext.OnProcessExit.

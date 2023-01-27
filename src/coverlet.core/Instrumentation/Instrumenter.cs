@@ -31,6 +31,7 @@ namespace Coverlet.Core.Instrumentation
         private readonly bool _skipAutoProps;
         private readonly bool _isCoreLibrary;
         private readonly string _hitsFolderPath;
+        private readonly bool _exposeGetHitsMethodOnly;
 
         private readonly ILogger _logger;
         private readonly IInstrumentationHelper _instrumentationHelper;
@@ -65,6 +66,7 @@ namespace Coverlet.Core.Instrumentation
             string[] doesNotReturnAttributes,
             string[] additionalModulePaths,
             string hitsFolderPath,
+            bool exposeGetHitsMethodOnly,
             bool singleHit,
             bool skipAutoProps,
             ILogger logger,
@@ -78,6 +80,7 @@ namespace Coverlet.Core.Instrumentation
             _excludeFilters = excludeFilters;
             _includeFilters = includeFilters;
             _hitsFolderPath = hitsFolderPath;
+            _exposeGetHitsMethodOnly = exposeGetHitsMethodOnly;
             _additionalModulePaths = additionalModulePaths;
             _excludedFilesHelper = new ExcludedFilesHelper(excludedFiles, logger);
             _excludedAttributes = PrepareAttributes(excludedAttributes, nameof(ExcludeFromCoverageAttribute), nameof(ExcludeFromCodeCoverageAttribute));
@@ -289,7 +292,7 @@ namespace Coverlet.Core.Instrumentation
                     }
 
                     // Fixup the custom tracker class constructor, according to all instrumented types
-                    if (_customTrackerRegisterUnloadEventsMethod == null)
+                    if (_customTrackerRegisterUnloadEventsMethod == null && !_exposeGetHitsMethodOnly)
                     {
                         _customTrackerRegisterUnloadEventsMethod = new MethodReference(
                             nameof(ModuleTrackerTemplate.RegisterUnloadEvents), module.TypeSystem.Void, _customTrackerTypeDef);
@@ -297,7 +300,7 @@ namespace Coverlet.Core.Instrumentation
 
                     Instruction lastInstr = _customTrackerClassConstructorIl.Body.Instructions.Last();
 
-                    if (!containsAppContext)
+                    if (!containsAppContext && _customTrackerRegisterUnloadEventsMethod != null)
                     {
                         // For "normal" cases, where the instrumented assembly is not the core library, we add a call to
                         // RegisterUnloadEvents to the static constructor of the generated custom tracker. Due to static

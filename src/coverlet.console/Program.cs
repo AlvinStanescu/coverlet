@@ -63,6 +63,7 @@ namespace Coverlet.Console
             CommandOption skipAutoProp = app.Option("--skipautoprops", "Neither track nor record auto-implemented properties.", CommandOptionType.NoValue);
             CommandOption mergeWith = app.Option("--merge-with", "Path to existing coverage result to merge.", CommandOptionType.SingleValue);
             CommandOption hitsFolderPath = app.Option("--hits-path", "Path to store the hits files. Defaults to the user temp folder.", CommandOptionType.SingleValue);
+            CommandOption exposeGetHitsMethodOnly = app.Option("--expose-get-hits-method-only", "When set to false, it will not store the hits files on AppDomain.DomainUnload()", CommandOptionType.NoValue);
             CommandOption useSourceLink = app.Option("--use-source-link", "Specifies whether to use SourceLink URIs in place of file system paths.", CommandOptionType.NoValue);
             CommandOption doesNotReturnAttributes = app.Option("--does-not-return-attribute", "Attributes that mark methods that do not return.", CommandOptionType.MultipleValue);
             CommandOption additionalModulePaths = app.Option("--module-path", "Specifies an additional module path for assembly resolution.", CommandOptionType.MultipleValue);
@@ -98,7 +99,8 @@ namespace Coverlet.Console
                     SkipAutoProps = skipAutoProp.HasValue(),
                     AdditionalModulePaths = additionalModulePaths.Values.ToArray(),
                     DoesNotReturnAttributes = doesNotReturnAttributes.Values.ToArray(),
-                    HitsFolderPath = hitsFolderPath.Value()
+                    HitsFolderPath = hitsFolderPath.Value(),
+                    ExposeGetHitsMethodOnly = exposeGetHitsMethodOnly.HasValue()
                 };
 
                 Coverage coverage = null;

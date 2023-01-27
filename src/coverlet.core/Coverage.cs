@@ -21,12 +21,13 @@ namespace Coverlet.Core
         public string[] ExcludeAttributes { get; set; }
         public string[] AdditionalModulePaths { get; set; }
         public string HitsFolderPath { get; set; }
+        public bool ExposeGetHitsMethodOnly { get; set; } = false;
         public bool IncludeTestAssembly { get; set; }
         public bool SingleHit { get; set; }
         public string MergeWith { get; set; }
         public bool UseSourceLink { get; set; }
         public string[] DoesNotReturnAttributes { get; set; }
-        public bool SkipAutoProps { get; set; }        
+        public bool SkipAutoProps { get; set; }
     }
 
     internal class Coverage
@@ -40,6 +41,7 @@ namespace Coverlet.Core
         private string[] _excludeAttributes;
         private string[] _additionalModulePaths;
         private string _hitsFolderPath;
+        private bool _exposeGetHitsMethodOnly;
         private bool _includeTestAssembly;
         private bool _singleHit;
         private string _mergeWith;
@@ -75,6 +77,7 @@ namespace Coverlet.Core
             _includeTestAssembly = parameters.IncludeTestAssembly;
             _additionalModulePaths = parameters.AdditionalModulePaths;
             _hitsFolderPath = parameters.HitsFolderPath;
+            _exposeGetHitsMethodOnly = parameters.ExposeGetHitsMethodOnly;
             _singleHit = parameters.SingleHit;
             _mergeWith = parameters.MergeWith;
             _useSourceLink = parameters.UseSourceLink;
@@ -130,12 +133,13 @@ namespace Coverlet.Core
                 var instrumenter = new Instrumenter(module,
                                                     _identifier,
                                                     _excludeFilters,
-                                                    _includeFilters,                                                    
+                                                    _includeFilters,
                                                     _excludedSourceFiles,
                                                     _excludeAttributes,
                                                     _doesNotReturnAttributes,
                                                     _additionalModulePaths,
                                                     _hitsFolderPath,
+                                                    _exposeGetHitsMethodOnly,
                                                     _singleHit,
                                                     _skipAutoProps,
                                                     _logger,
