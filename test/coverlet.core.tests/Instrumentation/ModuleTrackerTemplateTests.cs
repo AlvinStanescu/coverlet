@@ -146,6 +146,32 @@ namespace Coverlet.Core.Tests.Instrumentation
 
         }
 
+        [Fact]
+        public void WriterOutsideTheMutexDelaysUnloadInsteadOfFailingIt()
+        {
+            FunctionExecutor.Run(async () =>
+            {
+                using var ctx = new TrackerContext();
+                WriteHitsFile(new[] { 0, 3, 2, 1 });
+                ModuleTrackerTemplate.HitsArray = new[] { 0, 1, 2, 3 };
+
+                // A process in another Windows session does not see the mutex, it only holds the file.
+                Task unloadTask;
+                using (new FileStream(ModuleTrackerTemplate.HitsFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    unloadTask = Task.Run(() => ModuleTrackerTemplate.UnloadModule(null, null));
+                    Assert.False(unloadTask.Wait(200));
+                }
+
+                await unloadTask;
+
+                var expectedHitsArray = new[] { 0, 4, 4, 4 };
+                Assert.Equal(expectedHitsArray, ReadHitsFile());
+
+                return 0;
+            });
+        }
+
         private void WriteHitsFile(int[] hitsArray)
         {
             using (var fs = new FileStream(ModuleTrackerTemplate.HitsFilePath, FileMode.Create))

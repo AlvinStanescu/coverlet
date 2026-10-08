@@ -120,7 +120,26 @@ namespace Coverlet.Core.Instrumentation
                         {
                             // Update the number of hits by adding value on disk with the ones on memory.
                             // This path should be triggered only in the case of multiple AppDomain unloads.
-                            using (var fs = new FileStream(HitsFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                            // The mutex only spans one Windows session, so a process in another session may still hold the file.
+                            FileStream hitsFile = null;
+                            for (int attempt = 0; hitsFile == null; ++attempt)
+                            {
+                                try
+                                {
+                                    hitsFile = new FileStream(HitsFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                                }
+                                catch (IOException)
+                                {
+                                    if (attempt == 250)
+                                    {
+                                        throw;
+                                    }
+
+                                    Thread.Sleep(20);
+                                }
+                            }
+
+                            using (var fs = hitsFile)
                             using (var br = new BinaryReader(fs))
                             using (var bw = new BinaryWriter(fs))
                             {
