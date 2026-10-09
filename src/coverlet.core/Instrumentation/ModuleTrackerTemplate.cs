@@ -203,12 +203,11 @@ namespace Coverlet.Core.Instrumentation
                     catch (Exception ex)
                     {
                         WriteLog(ex.ToString());
+                        mutex.ReleaseMutex();
                         throw;
                     }
                 }
 
-                // On purpose this is not under a try-finally: it is better to have an exception if there was any error writing the hits file
-                // this case is relevant when instrumenting corelib since multiple processes can be running against the same instrumented dll.
                 mutex.ReleaseMutex();
             }
         }
