@@ -40,6 +40,34 @@ namespace Coverlet.Core.Instrumentation
         {
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(UnloadModule);
             AppDomain.CurrentDomain.DomainUnload += new EventHandler(UnloadModule);
+
+            // A logoff terminates interactive processes without ProcessExit, after sending them WM_ENDSESSION.
+            if (Environment.UserInteractive)
+            {
+                ThreadPool.QueueUserWorkItem(new WaitCallback(RegisterSessionEnded));
+            }
+        }
+
+        // From a pool thread SystemEvents starts its own message loop thread and raises SessionEnded on it.
+        private static void RegisterSessionEnded(object state)
+        {
+            try
+            {
+                // Only desktop apps ship the type on .NET, and a failed load would reach the app's AssemblyResolve handlers.
+                string platformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+                string systemEvents = platformAssemblies == null
+                    ? "Microsoft.Win32.SystemEvents, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+                    : platformAssemblies.Contains("Microsoft.Win32.SystemEvents.dll") ? "Microsoft.Win32.SystemEvents, Microsoft.Win32.SystemEvents" : null;
+                if (systemEvents != null)
+                {
+                    EventInfo sessionEnded = Type.GetType(systemEvents, true).GetEvent("SessionEnded");
+                    sessionEnded.AddEventHandler(null, Delegate.CreateDelegate(sessionEnded.EventHandlerType, new EventHandler(UnloadModule).Method));
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteLog($"Failed to register for session end -> '{ex.Message}'");
+            }
         }
 
         public static void RecordHitInCoreLibrary(int hitLocationIndex)
